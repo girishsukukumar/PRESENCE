@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gentle Steps</title>
+    
+    
+    <!-- Load React and ReactDOM Core Libraries via CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    
+
+    <!-- Load Babel to compile JSX dynamically in the browser -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+</head>
+<body>
+
+    <!-- Target container where React will render the UI -->
+    <div id="root"></div>
+
+    <!-- Note the type="text/babel" - this triggers Babel execution -->
+    <script type="text/babel" data-type="module">
+        // Define a simple functional component
+
+        const { useState, useEffect } = React;
+
+
+        function SensorStatusIcon({ sensor_status, x, y }) {
+            const normalizedStatus = (sensor_status || "")
+
+            // KEEP_ALIVE -> small green circle
+            if (normalizedStatus === "KEEP_ALIVE") {
+                return (
+                    <g transform={`translate(${x}, ${y})`}>
+                        {/* 1. Invisible Bounding Box covering the entire 24x24 icon area */}
+                        <rect width="24" height="24" fill="transparent" pointerEvents="all" />
+
+                        {/* 2. Tooltip Title */}
+                        <title>Status: Working</title>
+                        <circle cx="6" cy="6" r="7" fill="#22c55e" />
+                    </g>
+                );
+            }
+
+            // ON_LINE / ONLINE -> green Wi-Fi icon
+            if (normalizedStatus === "ON_LINE" || normalizedStatus === "ONLINE") {
+                return (
+                    <g transform={`translate(${x}, ${y})`} fill="none">
+                        {/* 1. Invisible Bounding Box covering the entire 24x24 icon area */}
+                        <rect width="24" height="24" fill="transparent" pointerEvents="all" />
+
+                        {/* 2. Tooltip Title */}
+                        <title>Status: Online</title>
+                        <path d="M2 8.5C7.5 3.5 16.5 3.5 22 8.5" stroke="#22c55e" strokeWidth="1.8" strokeLinecap="round" />
+                        <path d="M5.5 12C9.2 8.8 14.8 8.8 18.5 12" stroke="#22c55e" strokeWidth="1.8" strokeLinecap="round" />
+                        <path d="M9 15.5C10.8 14 13.2 14 15 15.5" stroke="#22c55e" strokeWidth="1.8" strokeLinecap="round" />
+                        <circle cx="12" cy="19" r="1.3" fill="#22c55e" />
+                    </g>
+                );
+            }
+
+            // OFF_LINE / OFFLINE -> red Wi-Fi icon with slash
+            if (normalizedStatus === "OFF_LINE" || normalizedStatus === "OFFLINE") {
+                return (
+                    <g transform={`translate(${x}, ${y})`} fill="none">
+                        {/* 1. Invisible Bounding Box covering the entire 24x24 icon area */}
+                        <rect width="24" height="24" fill="transparent" pointerEvents="all" />
+
+                        {/* 2. Tooltip Title */}
+                        <title>Status: Offline</title>
+                        <path d="M2 8.5C7.5 3.5 16.5 3.5 22 8.5" stroke="#ef4444" strokeWidth="1.8" strokeLinecap="round" />
+                        <path d="M5.5 12C9.2 8.8 14.8 8.8 18.5 12" stroke="#ef4444" strokeWidth="1.8" strokeLinecap="round" />
+                        <path d="M9 15.5C10.8 14 13.2 14 15 15.5" stroke="#ef4444" strokeWidth="1.8" strokeLinecap="round" />
+                        <circle cx="12" cy="19" r="1.3" fill="#ef4444" />
+                        <path d="M4 4L20 20" stroke="#ef4444" strokeWidth="1.8" strokeLinecap="round" />
+                    </g>
+                );
+            }
+
+            return null;
+        }
+
+
+        function App() {
+
+            const SCALE = 22         // pixels per foot
+            const TOTAL_W = 30        // ft
+            const TOTAL_H = 20        // ft
+            const PAD = 60            // space for dimension lines/labels
+            const WALL = 4            // wall line thickness (px)
+            const px = (ft) => ft * SCALE
+            
+            const [sensors, setSensors] = useState([])
+
+            // const [sensors, setSensors] = useState([
+            //     {"sensor_room":"BedRoom","sensor_status":"OFF_LINE","timestamp":"2026-09-24T21:45:39.457478"},
+            //     {"Moving Target":false,"Moving Target Dist":0,"Stationary Target":false,"Stationary Target Dist":0,"Wifi":46,"sensor_room":"DiningRoom","sensor_status":"ON_LINE","status":"NOT_DETECTED","timestamp":"2026-09-24T21:45:34.747789"},
+            //     {"Moving Target":false,"Moving Target Dist":0,"Stationary Target":false,"Stationary Target Dist":0,"Wifi":6,"sensor_room":"Kitchen","sensor_status":"OFF_LINE","status":"NOT_DETECTED","timestamp":"2026-09-24T21:45:36.921164"},
+            //     {"Moving Target":false,"Moving Target Dist":0,"Stationary Target":true,"Stationary Target Dist":18,"Wifi":49,"sensor_room":"LivingRoom","sensor_status":"KEEP_ALIVE","status":"DETECTED","timestamp":"2026-09-24T21:45:35.949020"},
+            //     {"Moving Target":true,"Moving Target Dist":20,"Stationary Target":false,"Stationary Target Dist":0,"Wifi":76,"sensor_room":"Toilet-1","sensor_status":"OFF_LINE","status":"DETECTED","timestamp":"2026-09-24T21:45:41.282824"}
+            // ])
+
+
+            const [rooms, setRooms] = useState([
+                { sensor_room: "LivingRoom", room: 'Living Room', x: 18, y: 0,  w: 12, h: 12, fillColor: '#e8e4f5'},
+                { sensor_room: "DiningRoom", room: 'Dining Room',  x: 10, y: 12, w: 20, h: 8,  fillColor: '#e8e4f5'},
+                { sensor_room: "Kitchen", room: 'Kitchen', x: 0,  y: 12, w: 10, h: 8,  fillColor: '#e8e4f5'},
+                { sensor_room: "BedRoom", room: 'Bed Room', x: 0,  y: 0,  w: 12, h: 12, fillColor: '#e8e4f5'},
+                { sensor_room: "Toilet-1", room: 'Toilet 1',  x: 12, y: 0,  w: 6,  h: 7,  fillColor: '#e8e4f5'},
+            ])
+
+            // Door openings: wall segment to leave blank + swing arc.
+            // wall: 'h' = gap cut into a horizontal wall line, 'v' = vertical wall line.
+            const doors = [
+                { wall: 'v', x: 12, y1: 3,  y2: 6,  hinge: 'top' }, // Bedroom <-> Toilet
+                { wall: 'h', x1: 12, x2: 15, y: 12,  hinge: 'left'  }, // Bed Room <-> Dining (lower)
+                { wall: 'v', x: 18, y1: 3,  y2: 6,  hinge: 'top' }, // Toilet <-> Living Room
+                { wall: 'h', x1: 22, x2: 25, y: 12,  hinge: 'left'   }, // Living Room <-> Dining
+                { wall: 'v', x: 10, y1: 14, y2: 17, hinge: 'top' }, // Kitchen <-> Dining
+                { wall: 'h', x1: 2,  x2: 5,  y: 0,   hinge: 'left' }, // front door (Bed Room wall)
+
+                // NEW: passway between Bedroom and Living Room via the corridor below the Toilet
+                { wall: 'v', x: 12, y1: 8, y2: 11, hinge: 'top' }, // Bedroom -> corridor
+                { wall: 'v', x: 18, y1: 8, y2: 11, hinge: 'top' }, // corridor -> Living Room
+            ]
+
+            const dataByRoom = Object.fromEntries(rooms.map((r) => [r.sensor_room, r]))
+
+            console.log(sensors)
+
+
+            useEffect(() => {
+                
+                const timer = setInterval(() => {
+                    fetch("http://3.7.179.252:5000/api/sensors")
+                    .then(res => res.json())
+                    .then(json => setSensors(json.data))
+                }, 5000)
+
+                return () => clearInterval(timer)
+
+            }, []);
+
+            return (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', fontFamily: 'Arial, sans-serif', paddingTop: '16px' }}>
+                    <h2 style={{ marginBottom: '4px' }}>Sensor Data</h2>
+                    {sensors.length > 0 ?
+                        <div style={{ background: '#fff', padding: '10px', boxShadow: '0 1px 4px rgba(0,0,0,0.15)' }}>
+                            <svg
+                                width={px(TOTAL_W) + PAD * 2}
+                                height={px(TOTAL_H) + PAD * 2}
+                            >
+
+                                <g transform={`translate(${PAD}, ${PAD})`}>
+
+                                    {/* Room fills + labels */}
+                                    {sensors.map((s) => {
+
+                                        const room_dim = dataByRoom[s.sensor_room]
+                                        if (!room_dim) {
+                                            console.warn("No matching room found for sensor id:", s.sensor_room);
+                                            return null;
+                                        }
+
+                                        const occupied = s.status === "DETECTED";
+                                        
+                                        const cx = px(room_dim.x) + px(room_dim.w) / 2;
+                                        const cy = px(room_dim.y) + px(room_dim.h) / 2;
+
+                                        return (
+                                            <g key={s.sensor_room}>
+                                                <rect
+                                                    x={px(room_dim.x)}
+                                                    y={px(room_dim.y)}
+                                                    width={px(room_dim.w)}
+                                                    height={px(room_dim.h)}
+                                                    fill={occupied ? "#c3e88d" : room_dim.fillColor}
+                                                />
+
+                                                {/* Sensor status icon - top-right corner of the room */}
+                                                <SensorStatusIcon
+                                                    sensor_status={s.sensor_status}
+                                                    x={px(room_dim.x + room_dim.w) - 28}
+                                                    y={px(room_dim.y) + 8}
+                                                />
+
+                                                <text x={cx} y={cy - 16} textAnchor="middle" fontSize={13} fontWeight="700" fill="#333">
+                                                    {room_dim.room}
+                                                </text>
+                                                <text x={cx} y={cy + 18} textAnchor="middle" fontSize={10} fill="#333">
+                                                    {new Date(s.timestamp).toLocaleDateString()}
+                                                </text>
+                                                <text x={cx} y={cy + 32} textAnchor="middle" fontSize={10} fill="#333">
+                                                    {occupied ? "Occupied since" : "Empty since"} {new Date(s.timestamp).toLocaleTimeString()}
+                                                </text>
+                                            </g>
+                                        )
+                                    })}
+
+                                    {/* Interior walls (drawn as thick lines, skipping door gaps) */}
+                                    {rooms.map((room) => (
+                                        <rect
+                                            key={"wall-" + room.sensor_room}
+                                            x={px(room.x)}
+                                            y={px(room.y)}
+                                            width={px(room.w)}
+                                            height={px(room.h)}
+                                            fill="none"
+                                            stroke="#333"
+                                            strokeWidth={WALL}
+                                        />
+                                    ))}
+
+                                    {/* Door gaps: white-out the wall line + draw door leaf */}
+                                    {doors.map((d, i) => {
+                                        if (d.wall === 'v') {
+                                            const x = px(d.x);
+                                            const y1 = px(d.y1);
+                                            const y2 = px(d.y2);
+                                            return (
+                                                <g key={"door-" + i}>
+                                                    <line x1={x} y1={y1} x2={x} y2={y2} stroke="#fff" strokeWidth={WALL + 2} />
+                                                    <line x1={x} y1={y1} x2={x} y2={y2} stroke="#8a5a2b" strokeWidth={2} />
+                                                </g>
+                                            );
+                                        }
+                                        const x1 = px(d.x1);
+                                        const x2 = px(d.x2);
+                                        const y = px(d.y);
+                                        return (
+                                            <g key={"door-" + i}>
+                                                <line x1={x1} y1={y} x2={x2} y2={y} stroke="#fff" strokeWidth={WALL + 2} />
+                                                <line x1={x1} y1={y} x2={x2} y2={y} stroke="#8a5a2b" strokeWidth={2} />
+                                            </g>
+                                        );
+                                    })}
+
+                                    {/* Outer wall outline (thick, hatched) */}
+                                    <rect x={-WALL/2} y={-WALL/2} width={px(TOTAL_W) + WALL} height={px(TOTAL_H) + WALL}
+                                          fill="none" stroke="#222" strokeWidth={WALL + 2} />
+
+                                </g>
+
+                            </svg>
+
+                        </div>
+                    : <div>Retrieving Data...</div>}
+                </div> 
+            )
+
+        }
+
+        // Render the component into the root DOM element
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,65 @@
+1. I'm building an AIoT elder-care presence and anomaly detection system for a design competition,
+ using ESP32 hardware and LD2410c mmWave presence sensors. Here's the architecture:
+
+2. There are five leaf ESP32 boards, each paired with one LD2410c sensor in a different room, 
+They publish presence transition events + keep-alive heartbeats over MQTT to a 
+single shared topic: PRESENCE/BLR/MANSARVOVAR/A4562/STATUS.
+
+3. There is one central unit which is made up of  One ESP32-S3 (M5Stack, 16MB flash, 8MB PSRAM, SD card) 
+subscribes to topic PRESENCE/BLR/MANSARVOVAR/A4562/STATUS.
+
+This unit does the following
+(i) collect data incomming MQTT messages 
+
+(ii)  tracks occupancy intervals per room, computes EWMA-based statistical baselines for anomaly 
+detection (bathroom visit count/duration, hourly usage pattern, wake time),
+ 
+(iii) logs raw intervals to daily  CSV files on its SD card - This will have the name of of the room,
+    start_epoch  :  the time at which human presence was detected ,
+	end_epoch,   : time at which human presence has disappeared from the sensor
+	duration_sec : Duration when the human presence was found difference between start_epoc and end_epoc
+    One CSV file per day is created and recorded in the SD card
+	Following is a sample of the data that is logged in the SD 
+	
+LivingRoom,1790122807,1790130622,7815
+LivingRoom,1790132057,1790140391,8334
+Toilet-1,1790140399,1790140548,149
+LivingRoom,1790140551,1790145790,5239
+Kitchen,1790145792,1790146340,548
+LivingRoom,1790146348,1790152075,5727
+Kitchen,1790152081,1790155449,3368
+LivingRoom,1790155452,1790163118,7666
+LivingRoom,1790163123,1790167323,4200
+BedRoom,1790167326,1790185429,18103
+Toilet-1,1790185429,1790185825,396
+BedRoom,1790185833,1790195045,9212
+Toilet-1,1790195045,1790195518,473
+BedRoom,1790195521,1790197803,2282
+Toilet-1,1790197803,1790198348,545
+Kitchen,1790198352,1790199360,1008
+LivingRoom,1790199367,1790209657,10290
+
+(iv) There are five rooms, LivingRoom, BedRoom, Kitchen, Toilet-1
+	
+(v) The seperate python scripts need to be used  are extract_features.py  and train_isolation_forest.py) 
+    this  runs on a laptop (in folder CSV_files_for_training)
+    take those CSVs which are recorded in SD card  as input and converts them 
+    into a trained Isolation Forest model, exported as a C header for on-device multivariate anomaly scoring.
+    The exact flow of the training pipe line 
+    CSV File -> extract_feature.py -> features.csv->train_isolation_forest.py -> train_isolation_forest.h
+   
+   train_isolation_forest.h will included in the ESP32 project and compiled to generate binaries
+   
+(vi)  An basic version of extract_feature.py and train_isolation_forest.py is already available you need to review
+it and make modifications to it for fixing bugs.
+
+
+
+4. The code which runs on ESP32-S3 (M5Stack, 16MB flash, 8MB PSRAM, SD card)  is available in folder basic_MQTT_SUB
+   this code was compiled on Arduino IDE. You can review this code and understand how messages are
+   received over MQTT and anomaly detection is done
+   
+5. You are expected to generate extract_feature.py and train_isolation_forest.py for training purpose 
+
+   
+   
